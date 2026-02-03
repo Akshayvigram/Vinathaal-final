@@ -79,6 +79,7 @@ async function startServer() {
     app.use("/api", sendPDFEmail(config));
     app.use('/api/auth', authRoutes(db, transporter, config));
     app.use("/api", EncryptPDF());
+    app.use('/api', s3Upload(config, db));
     app.use('/api', statsRoutes(db, config));
     app.get('/health', (req, res) => {
       res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
@@ -92,7 +93,6 @@ async function startServer() {
     app.use('/api', supportRoute(transporter, config));
     app.use('/api', slackAlertRoute(config));
     app.use('/api/user', userRoutes(db));
-    app.use('/api', s3Upload(config, db));
     
     // --- System Routes ---
     

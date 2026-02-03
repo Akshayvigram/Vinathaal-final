@@ -32,13 +32,14 @@ function App() {
           <Route path="/generator" element={<Generator />} />
           <Route path="/question-bank" element={<QuestionBankGenerator />} />
           <Route path="/mcq-generator" element={<MCQGenerator />} />
-          <Route path="/result" element={<Result />} />
+          <Route path="/result/:templateId" element={<Result />} />
           <Route path="/answer-key" element={<AnswerKey />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/support" element={<Support />} />
           <Route path="/templates" element={<Templates />} />
+          {/* <Route path="/result/:templateId" element={<Result />} /> */}
           <Route path="/create-community" element={<CreateCommunity />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />
