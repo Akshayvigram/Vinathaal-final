@@ -1,46 +1,74 @@
-name: Deploy to EC2 on Push
+name: Deploy to Sandbox
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup SSH key
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Check dependencies
+        run: |
+          echo "Checking dependencies..."
+          npm list --depth=0 2>&1 || true
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H 100.50.118.153 >> ~/.ssh/known_hosts
 
-      - name: Deploy via SSH
+      - name: Deploy to EC2
         run: |
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-          set -e # Stop script on error
-          cd ~/question-craft-export
-          echo "Pulling latest code..."
-          git pull origin main
-          echo "Installing pnpm if not present..."
-          if ! command -v pnpm &> /dev/null; then
-           curl -fsSL https://get.pnpm.io/install.sh | sh -
-           export PNPM_HOME="$HOME/.local/share/pnpm"
-           export PATH="$PNPM_HOME:$PATH"
-           echo 'export PNPM_HOME="$HOME/.local/share/pnpm"' >> ~/.bashrc
-           echo 'export PATH="$PNPM_HOME:$PATH"' >> ~/.bashrc
-          else
-           echo "pnpm already installed"
-          fi
-          export PNPM_HOME="$HOME/.local/share/pnpm"
-          export PATH="$PNPM_HOME:$PATH"
-          echo "Installing dependencies..."
-          pnpm install
-          echo "Building frontend..."
-          pnpm run build
-          echo "Restarting backend..."
-          pm2 restart backend || pm2 start backend.js --name backend
+          ssh -i ~/.ssh/id_rsa ubuntu@100.50.118.153 << 'EOFSH'
+            echo "=== Pulling latest code ==="
+            cd /home/ubuntu/vinathaal
+            git pull origin main
+
+            echo "=== Installing backend dependencies ==="
+            cd backend
+            npm install
+
+            echo "=== Restarting backend ==="
+            pm2 restart vinathaal-backend
+
+            echo "=== Building frontend ==="
+            cd ..
+            npm run build
+
+            echo "=== Deploying frontend ==="
+            sudo rm -rf /var/www/vinathaal/*
+            sudo cp -r dist/* /var/www/vinathaal/
+            sudo chown -R ubuntu:ubuntu /var/www/vinathaal
+
+            echo "=== Verifying deployment ==="
+            pm2 status
+
+            echo "✓ Deployment complete!"
+          EOFSH
+
+      - name: Notify deployment
+        if: success()
+        run: echo "✓ Successfully deployed to sandbox.vinathaal.azhizen.com"
+
+      - name: Notify failure
+        if: failure()
+        run: echo "✗ Deployment failed - check logs"
