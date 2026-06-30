@@ -74,6 +74,7 @@ mysql_connection = "mysql -h xx.xx.xx.xx -u root -p"
 ssh -i vinathaal-key.pem ubuntu@<PUBLIC_IP>
 ```
 
+
 ### MySQL Access
 ```bash
 # From your local machine:
