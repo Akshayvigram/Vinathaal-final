@@ -21,7 +21,6 @@ const EncryptPDF = require('./routes/EncryptPDF');
 const sendPDFEmail = require('./routes/sendPDFEmail');
 const creditsHandling = require('./routes/creditsHandling');
 const workspacesRoute = require('./routes/workspaces');
-const papersRoute = require('./routes/papers');
 
 async function startServer() {
   try {
@@ -81,7 +80,6 @@ async function startServer() {
     app.use('/api', slackAlertRoute(config));
     app.use('/api/user', userRoutes(db));
     app.use('/api', workspacesRoute(db));
-    app.use('/api', papersRoute(db));
 
     app.use((err, req, res, next) => {
       console.error('Unhandled Error:', err);
